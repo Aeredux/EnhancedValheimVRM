@@ -29,6 +29,8 @@ namespace EnhancedValheimVRM
         public bool HelmetVisible = false;
         public Vector3 HelmetScale = Vector3.one;
         public Vector3 HelmetOffset = Vector3.zero;
+        // euler degrees, same vector style as the hand and back *Rot lines
+        public Vector3 HelmetRot = Vector3.zero;
 
         public bool ChestVisible = false;
         public bool ShouldersVisible = false;

@@ -33,10 +33,12 @@ WeaponScale=1.0
 #KnifeSkollAndHatiLeftHandPos=<0, 0.01, 0>
 #KnifeSkollAndHatiRightHandRot=<0, 0, 15>
 
-# Vanilla helmet visibility and additional scale/position adjustment.
+# Vanilla helmet visibility and additional scale/position/rotation adjustment.
+# HelmetRot is euler degrees, same style as the weapon Rot lines. Use it to aim the Dverger circlet light.
 HelmetVisible=false
 HelmetScale=<1, 1, 1>
 HelmetOffset=<0, 0, 0>
+HelmetRot=<0, 0, 0>
 # Vanilla armor visibility.
 ChestVisible=false
 ShouldersVisible=false

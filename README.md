@@ -43,8 +43,8 @@ settings_Example.txt.example has everything with comments, but the short version
 - weapon lines, see the next section.
 - SittingOnChairOffset \
   seated offset: X right, Y up, Z forward. Scales with avatar height.
-- HelmetVisible, HelmetScale, HelmetOffset \
-  vanilla helmet on or off and where it sits.
+- HelmetVisible, HelmetScale, HelmetOffset, HelmetRot \
+  vanilla helmet on or off, where it sits, and its euler rotation in degrees. HelmetRot aims pieces like the Dverger circlet light.
 - ChestVisible, ShouldersVisible, UtilityVisible, LegsVisible \
   show the vanilla armor on top of the vrm. off by default because it usually looks wrong.
 - SpringBoneStiffness, SpringBoneGravityPower \

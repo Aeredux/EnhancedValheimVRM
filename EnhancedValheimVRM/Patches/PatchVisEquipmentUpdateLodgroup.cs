@@ -52,10 +52,11 @@ namespace EnhancedValheimVRM
                 helmet.SetActive(settings.HelmetVisible);
                 if (settings.HelmetVisible)
                 {
-                    EquipmentTransformReference.Get(helmet.transform)
-                        .SetPositionOffset(settings.HelmetOffset, settings.PlayerVrmScale);
-                    EquipmentTransformReference.Get(helmet.transform)
-                        .SetScale(settings.PlayerVrmScale, settings.HelmetScale);
+                    // same order as held and back items: rotation first, then offset, then scale
+                    var reference = EquipmentTransformReference.Get(helmet.transform);
+                    reference.SetRotationOffset(settings.HelmetRot);
+                    reference.SetPositionOffset(settings.HelmetOffset, settings.PlayerVrmScale);
+                    reference.SetScale(settings.PlayerVrmScale, settings.HelmetScale);
                 }
             }
 

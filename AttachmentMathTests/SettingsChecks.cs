@@ -25,6 +25,8 @@ internal static class SettingsChecks
                 "Fresh reload candidate must restore omitted settings to defaults");
             check(first.ModelScale == 2 && first.HelmetVisible,
                 "Candidate reload mutated previous settings before successful swap");
+            check(replacement.HelmetRot.x == 0 && replacement.HelmetRot.y == 0 && replacement.HelmetRot.z == 0,
+                "Omitted helmet rotation must default to zero");
             check(replacement.SittingOnChairOffset.x == 0 && replacement.SittingOnChairOffset.y == 0 &&
                 replacement.SittingOnChairOffset.z == 0,
                 "Omitted chair offset must default to zero");
@@ -33,6 +35,15 @@ internal static class SettingsChecks
             check(seatedShared.SittingOnChairOffset.x == 0.02f && seatedShared.SittingOnChairOffset.y == 0.05f &&
                 seatedShared.SittingOnChairOffset.z == 0.10f,
                 "Legacy chair offset must parse and survive sharing");
+            var helmet = new VrmSettings("Test",
+                "HelmetVisible=true\nHelmetOffset=<0,0.1,0>\nHelmetRot=<10,-20,30>\nHelmetScale=<1,1,1>\n");
+            var helmetShared = new VrmSettings("Test", helmet.Serialize());
+            check(helmet.HelmetVisible && helmet.HelmetOffset.y == 0.1f && helmet.HelmetRot.x == 10f &&
+                helmet.HelmetRot.y == -20f && helmet.HelmetRot.z == 30f,
+                "HelmetRot did not parse alongside offset");
+            check(helmetShared.HelmetRot.x == 10f && helmetShared.HelmetRot.y == -20f &&
+                helmetShared.HelmetRot.z == 30f && helmetShared.HelmetOffset.y == 0.1f,
+                "HelmetRot lost in shared settings");
             // Per-class and per-weapon lines: class applies to every member, a named line replaces it,
             // and the lines survive the shared-settings round trip.
             File.WriteAllText(path,
@@ -138,7 +149,8 @@ internal static class SettingsChecks
                          "SpringBoneImmobile=,1", "SpringBoneImmobileType=Sideways", "SpringBoneMaxAngle=181",
                          "SpringBoneMaxAngle=-5", "SpringBoneMaxAngle=Ears,200", "SpringBoneMaxAngle=Ears,NaN",
                          "SpringBoneMaxAngle=,18", "InteractionDistanceScale=Infinity",
-                         "RightHandBackItemPos=(0,NaN,0)", "SittingOnChairOffset=(0,Infinity,0)"
+                         "RightHandBackItemPos=(0,NaN,0)", "SittingOnChairOffset=(0,Infinity,0)",
+                         "HelmetRot=<0,NaN,0>"
                      })
             {
                 File.WriteAllText(path, bad);
