@@ -42,11 +42,16 @@ namespace EnhancedValheimVRM
                 if (equipment.TryGetField<VisEquipment, GameObject>(field, out var hair)) hair.SetActive(false);
             }
 
-            SetListVisible(equipment, "m_chestItemInstances", settings.ChestVisible);
-            SetListVisible(equipment, "m_legItemInstances", settings.LegsVisible);
-            SetListVisible(equipment, "m_shoulderItemInstances", settings.ShouldersVisible);
-            SetListVisible(equipment, "m_utilityItemInstances", settings.UtilityVisible);
-            SetListVisible(equipment, "m_trinketItemInstances", settings.TrinketVisible);
+            SetListVisible(equipment, "m_chestItemInstances", settings.ChestVisible, settings.ChestPos, settings.ChestRot,
+                settings);
+            SetListVisible(equipment, "m_legItemInstances", settings.LegsVisible, settings.LegsPos, settings.LegsRot,
+                settings);
+            SetListVisible(equipment, "m_shoulderItemInstances", settings.ShouldersVisible, settings.ShouldersPos,
+                settings.ShouldersRot, settings);
+            SetListVisible(equipment, "m_utilityItemInstances", settings.UtilityVisible, settings.UtilityPos,
+                settings.UtilityRot, settings);
+            SetListVisible(equipment, "m_trinketItemInstances", settings.TrinketVisible, settings.TrinketPos,
+                settings.TrinketRot, settings);
             if (equipment.TryGetField<VisEquipment, GameObject>("m_helmetItemInstance", out var helmet))
             {
                 helmet.SetActive(settings.HelmetVisible);
@@ -68,12 +73,27 @@ namespace EnhancedValheimVRM
             vrm.GetGameObject().GetComponent<VrmAnimator>()?.StartupGetItems();
         }
 
-        private static void SetListVisible(VisEquipment equipment, string field, bool visible)
+        private static void SetListVisible(VisEquipment equipment,
+            string field,
+            bool visible,
+            Vector3 pos,
+            Vector3 rot,
+            VrmSettings settings)
         {
             if (!equipment.TryGetField<VisEquipment, List<GameObject>>(field, out var items)) return;
             foreach (var item in items)
             {
-                if (item != null) item.SetActive(visible);
+                if (item == null) continue;
+                item.SetActive(visible);
+                if (!visible) continue;
+                // A zero Pos and Rot leave the vanilla transform alone, so an omitted line
+                // does not move a piece that was only toggled visible. A Pos uses the same
+                // scaled socket mapping as HelmetOffset.
+                if (pos == Vector3.zero && rot == Vector3.zero) continue;
+                var reference = EquipmentTransformReference.Get(item.transform);
+                reference.SetRotationOffset(rot);
+                if (pos != Vector3.zero)
+                    reference.SetPositionOffset(pos, settings.PlayerVrmScale);
             }
         }
 

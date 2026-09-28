@@ -39,12 +39,23 @@ HelmetVisible=false
 HelmetScale=<1, 1, 1>
 HelmetOffset=<0, 0, 0>
 HelmetRot=<0, 0, 0>
-# Vanilla armor visibility.
+# Vanilla armor visibility, plus a nudge. Pos is meters along that piece's axes and scales
+# with the avatar, same as HelmetOffset. Rot is euler degrees. Omitted lines stay at zero.
 ChestVisible=false
+ChestPos=<0, 0, 0>
+ChestRot=<0, 0, 0>
 ShouldersVisible=false
+ShouldersPos=<0, 0, 0>
+ShouldersRot=<0, 0, 0>
 UtilityVisible=false
+UtilityPos=<0, 0, 0>
+UtilityRot=<0, 0, 0>
 TrinketVisible=false
+TrinketPos=<0, 0, 0>
+TrinketRot=<0, 0, 0>
 LegsVisible=false
+LegsPos=<0, 0, 0>
+LegsRot=<0, 0, 0>
 
 # Material brightness and optional asynchronous texture conversion.
 ModelBrightness=1.0

@@ -45,8 +45,10 @@ settings_Example.txt.example has everything with comments, but the short version
   seated offset: X right, Y up, Z forward. Scales with avatar height.
 - HelmetVisible, HelmetScale, HelmetOffset, HelmetRot \
   vanilla helmet on or off, where it sits, and its euler rotation in degrees. HelmetRot aims pieces like the Dverger circlet light.
-- ChestVisible, ShouldersVisible, UtilityVisible, LegsVisible \
-  show the vanilla armor on top of the vrm. off by default because it usually looks wrong.
+- ChestVisible, ShouldersVisible, UtilityVisible, TrinketVisible, LegsVisible \
+  and the matching *Pos and *Rot lines \
+  show the vanilla armor on top of the vrm. off by default because it usually looks wrong. \
+  Pos is meters along that piece's axes and scales with avatar height, same as HelmetOffset. Rot is euler degrees. Omitted lines stay at zero.
 - SpringBoneStiffness, SpringBoneGravityPower \
   multipliers on what the vrm author set. 1.0 = leave it alone.
 - SpringBoneImmobile, SpringBoneImmobileType \
