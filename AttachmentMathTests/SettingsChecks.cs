@@ -25,6 +25,14 @@ internal static class SettingsChecks
                 "Fresh reload candidate must restore omitted settings to defaults");
             check(first.ModelScale == 2 && first.HelmetVisible,
                 "Candidate reload mutated previous settings before successful swap");
+            check(replacement.HelmetRot.x == 0 && replacement.HelmetRot.y == 0 && replacement.HelmetRot.z == 0,
+                "Omitted helmet rotation must default to zero");
+            check(replacement.ChestPos.y == 0 && replacement.ChestRot.y == 0 &&
+                replacement.ShouldersPos.x == 0 && replacement.ShouldersRot.z == 0 &&
+                replacement.UtilityPos.z == 0 && replacement.UtilityRot.x == 0 &&
+                replacement.TrinketPos.y == 0 && replacement.TrinketRot.y == 0 &&
+                replacement.LegsPos.y == 0 && replacement.LegsRot.z == 0,
+                "Omitted armor Pos/Rot must default to zero");
             check(replacement.SittingOnChairOffset.x == 0 && replacement.SittingOnChairOffset.y == 0 &&
                 replacement.SittingOnChairOffset.z == 0,
                 "Omitted chair offset must default to zero");
@@ -33,6 +41,29 @@ internal static class SettingsChecks
             check(seatedShared.SittingOnChairOffset.x == 0.02f && seatedShared.SittingOnChairOffset.y == 0.05f &&
                 seatedShared.SittingOnChairOffset.z == 0.10f,
                 "Legacy chair offset must parse and survive sharing");
+            var helmet = new VrmSettings("Test",
+                "HelmetVisible=true\nHelmetOffset=<0,0.1,0>\nHelmetRot=<10,-20,30>\nHelmetScale=<1,1,1>\n");
+            var helmetShared = new VrmSettings("Test", helmet.Serialize());
+            check(helmet.HelmetVisible && helmet.HelmetOffset.y == 0.1f && helmet.HelmetRot.x == 10f &&
+                helmet.HelmetRot.y == -20f && helmet.HelmetRot.z == 30f,
+                "HelmetRot did not parse alongside offset");
+            check(helmetShared.HelmetRot.x == 10f && helmetShared.HelmetRot.y == -20f &&
+                helmetShared.HelmetRot.z == 30f && helmetShared.HelmetOffset.y == 0.1f,
+                "HelmetRot lost in shared settings");
+            var armor = new VrmSettings("Test",
+                "ChestPos=<0,0.02,0>\nChestRot=<0,10,0>\nShouldersPos=<0.01,0,0>\nShouldersRot=<0,0,5>\nUtilityPos=<0,0,0.02>\nUtilityRot=<1,0,0>\nTrinketPos=<0,-0.01,0>\nTrinketRot=<0,15,0>\nLegsPos=<0,0.03,0>\nLegsRot=<0,0,-8>\n");
+            check(armor.ChestPos.y == 0.02f && armor.ChestRot.y == 10f, "Chest Pos/Rot did not parse");
+            check(armor.ShouldersPos.x == 0.01f && armor.ShouldersRot.z == 5f, "Shoulders Pos/Rot did not parse");
+            check(armor.UtilityPos.z == 0.02f && armor.UtilityRot.x == 1f, "Utility Pos/Rot did not parse");
+            check(armor.TrinketPos.y == -0.01f && armor.TrinketRot.y == 15f, "Trinket Pos/Rot did not parse");
+            check(armor.LegsPos.y == 0.03f && armor.LegsRot.z == -8f, "Legs Pos/Rot did not parse");
+            var armorShared = new VrmSettings("Test", armor.Serialize());
+            check(armorShared.ChestPos.y == 0.02f && armorShared.ChestRot.y == 10f &&
+                armorShared.ShouldersPos.x == 0.01f && armorShared.ShouldersRot.z == 5f &&
+                armorShared.UtilityPos.z == 0.02f && armorShared.UtilityRot.x == 1f &&
+                armorShared.TrinketPos.y == -0.01f && armorShared.TrinketRot.y == 15f &&
+                armorShared.LegsPos.y == 0.03f && armorShared.LegsRot.z == -8f,
+                "Armor Pos/Rot lost in shared settings");
             // Per-class and per-weapon lines: class applies to every member, a named line replaces it,
             // and the lines survive the shared-settings round trip.
             File.WriteAllText(path,
@@ -138,7 +169,8 @@ internal static class SettingsChecks
                          "SpringBoneImmobile=,1", "SpringBoneImmobileType=Sideways", "SpringBoneMaxAngle=181",
                          "SpringBoneMaxAngle=-5", "SpringBoneMaxAngle=Ears,200", "SpringBoneMaxAngle=Ears,NaN",
                          "SpringBoneMaxAngle=,18", "InteractionDistanceScale=Infinity",
-                         "RightHandBackItemPos=(0,NaN,0)", "SittingOnChairOffset=(0,Infinity,0)"
+                         "RightHandBackItemPos=(0,NaN,0)", "SittingOnChairOffset=(0,Infinity,0)",
+                         "HelmetRot=<0,NaN,0>", "ChestPos=<0,NaN,0>", "LegsRot=(Infinity,0,0)"
                      })
             {
                 File.WriteAllText(path, bad);

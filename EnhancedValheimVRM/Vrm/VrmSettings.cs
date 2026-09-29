@@ -29,12 +29,24 @@ namespace EnhancedValheimVRM
         public bool HelmetVisible = false;
         public Vector3 HelmetScale = Vector3.one;
         public Vector3 HelmetOffset = Vector3.zero;
+        // euler degrees, same vector style as the hand and back *Rot lines
+        public Vector3 HelmetRot = Vector3.zero;
 
         public bool ChestVisible = false;
+        public Vector3 ChestPos = Vector3.zero;
+        public Vector3 ChestRot = Vector3.zero;
         public bool ShouldersVisible = false;
+        public Vector3 ShouldersPos = Vector3.zero;
+        public Vector3 ShouldersRot = Vector3.zero;
         public bool UtilityVisible = false;
+        public Vector3 UtilityPos = Vector3.zero;
+        public Vector3 UtilityRot = Vector3.zero;
         public bool TrinketVisible = false;
+        public Vector3 TrinketPos = Vector3.zero;
+        public Vector3 TrinketRot = Vector3.zero;
         public bool LegsVisible = false;
+        public Vector3 LegsPos = Vector3.zero;
+        public Vector3 LegsRot = Vector3.zero;
 
         public float ModelBrightness = 0.8f;
         public bool FixCameraHeight = true;

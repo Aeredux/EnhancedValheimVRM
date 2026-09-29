@@ -33,7 +33,7 @@ The name of the character in the game needs to correspond to a VRM and settings 
 ### Whats in the settings file
 settings_Example.txt.example has everything with comments, but the short version.
 - ModelScale, ModelBrightness, UseMToonShader, AttemptTextureFix, KeepAllBlendShapes, EnablePlayerFade, FixCameraHeight \
-  the model stuff. AttemptTextureFix converts the textures to the games shader so it gets lit like everything else (and ssao works). \
+  the model stuff. FixCameraHeight scales the vanilla camera height to the avatar and keeps the vanilla eye anchor, so tool swings do not bob the view. Near a wall or roof the collision check uses that same height, and a taller pivot stops under the ceiling. AttemptTextureFix converts the textures to the games shader so it gets lit like everything else (and ssao works). \
   ShaderForTextureFix picks the game shader it converts to, player (default, the normal character shader) or creature (the animal shader). \
   TextureFixEmission (0 to 1) makes the avatar glow a bit with its own colors so it does not go black in shadow. only works with creature. 0.15 default.
 - RightHandItemPos / LeftHandItemPos / RightHandBackItemPos / LeftHandBackItemPos and the matching *Rot ones \
@@ -41,10 +41,12 @@ settings_Example.txt.example has everything with comments, but the short version
 - weapon lines, see the next section.
 - SittingOnChairOffset \
   seated offset: X right, Y up, Z forward. Scales with avatar height.
-- HelmetVisible, HelmetScale, HelmetOffset \
-  vanilla helmet on or off and where it sits.
-- ChestVisible, ShouldersVisible, UtilityVisible, LegsVisible \
-  show the vanilla armor on top of the vrm. off by default because it usually looks wrong.
+- HelmetVisible, HelmetScale, HelmetOffset, HelmetRot \
+  vanilla helmet on or off, where it sits, and its euler rotation in degrees. HelmetRot aims pieces like the Dverger circlet light.
+- ChestVisible, ShouldersVisible, UtilityVisible, TrinketVisible, LegsVisible \
+  and the matching *Pos and *Rot lines \
+  show the vanilla armor on top of the vrm. off by default because it usually looks wrong. \
+  Pos is meters along that piece's axes and scales with avatar height, same as HelmetOffset. Rot is euler degrees. Omitted lines stay at zero.
 - SpringBoneStiffness, SpringBoneGravityPower \
   multipliers on what the vrm author set. 1.0 = leave it alone.
 - SpringBoneImmobile, SpringBoneImmobileType \
