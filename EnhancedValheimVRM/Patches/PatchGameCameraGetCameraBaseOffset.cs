@@ -33,8 +33,57 @@ namespace EnhancedValheimVRM
 
             // Keep the vanilla eye offset, including crouch, and only scale its height
             // so a shorter avatar is not looked at from the vanilla eye line.
+            // CollideRay2 still starts one cast at m_eye; PatchGameCameraCollideRay shifts
+            // that cast by the same amount or the two rays fight near a wall.
             if (settings.PlayerVrmScale > 0f)
                 __result.y *= settings.PlayerVrmScale;
+        }
+    }
+
+    // Near a wall the game spherecasts from m_eye and from the camera pivot, then blends
+    // the hits while the camera is between about 0.5 m and 2 m. Scaling only the pivot
+    // leaves those origins at different heights, and the blend flips as you walk the wall.
+    [HarmonyPatch(typeof(GameCamera), "CollideRay2")]
+    internal static class PatchGameCameraCollideRay
+    {
+        private static bool Prepare()
+        {
+            var method = AccessTools.Method(typeof(GameCamera), "CollideRay2");
+            if (method == null)
+            {
+                Logger.LogWarning(
+                    "GameCamera.CollideRay2 was not found; a scaled camera height may jump near walls.");
+                return false;
+            }
+
+            var eye = false;
+            var offset = false;
+            foreach (var parameter in method.GetParameters())
+            {
+                if (parameter.Name == "eyePos") eye = true;
+                if (parameter.Name == "offsetedEyePos") offset = true;
+            }
+
+            if (eye && offset) return true;
+            Logger.LogWarning(
+                "GameCamera.CollideRay2 parameters changed; a scaled camera height may jump near walls.");
+            return false;
+        }
+
+        private static void Prefix(ref Vector3 eyePos)
+        {
+            var player = Player.m_localPlayer;
+            if (player == null || player.m_eye == null || player.InBed() || player.IsAttached() ||
+                player.IsSitting())
+                return;
+            var vrmInstance = player.GetVrmInstance();
+            if (vrmInstance == null) return;
+            var settings = vrmInstance.GetSettings();
+            if (!settings.FixCameraHeight) return;
+            var scale = settings.PlayerVrmScale;
+            if (!(scale > 0f)) return;
+            var eyeHeight = player.m_eye.position.y - player.transform.position.y;
+            eyePos.y += eyeHeight * (scale - 1f);
         }
     }
 }

@@ -71,7 +71,8 @@ UseMToonShader=false
 # true loads all of them.
 KeepAllBlendShapes=false
 # Scales the vanilla camera height to the avatar. Stays on the vanilla eye anchor, so
-# mining and other tool swings do not bob the view. Close-camera fading is separate.
+# mining and other tool swings do not bob the view. Near-wall pull-in uses that same height.
+# Close-camera fading is separate.
 FixCameraHeight=true
 EnablePlayerFade=false
 
