@@ -33,6 +33,10 @@ internal static class SettingsChecks
                 replacement.TrinketPos.y == 0 && replacement.TrinketRot.y == 0 &&
                 replacement.LegsPos.y == 0 && replacement.LegsRot.z == 0,
                 "Omitted armor Pos/Rot must default to zero");
+            check(replacement.ChestScale.x == 1 && replacement.ChestScale.y == 1 && replacement.ChestScale.z == 1 &&
+                replacement.ShouldersScale.x == 1 && replacement.UtilityScale.y == 1 &&
+                replacement.TrinketScale.z == 1 && replacement.LegsScale.x == 1,
+                "Omitted armor scale must default to one");
             check(replacement.SittingOnChairOffset.x == 0 && replacement.SittingOnChairOffset.y == 0 &&
                 replacement.SittingOnChairOffset.z == 0,
                 "Omitted chair offset must default to zero");
@@ -64,6 +68,19 @@ internal static class SettingsChecks
                 armorShared.TrinketPos.y == -0.01f && armorShared.TrinketRot.y == 15f &&
                 armorShared.LegsPos.y == 0.03f && armorShared.LegsRot.z == -8f,
                 "Armor Pos/Rot lost in shared settings");
+            var scaled = new VrmSettings("Test",
+                "ShouldersOffset=<0,-0.9,-0.05>\nShouldersScale=<0.6,0.6,0.6>\nChestScale=<1,2,1>\n");
+            check(scaled.ShouldersPos.y == -0.9f && scaled.ShouldersPos.z == -0.05f &&
+                scaled.ShouldersScale.x == 0.6f && scaled.ChestScale.y == 2f,
+                "Armor Offset alias and Scale did not parse");
+            var scaledShared = new VrmSettings("Test", scaled.Serialize());
+            check(scaledShared.ShouldersPos.y == -0.9f && scaledShared.ShouldersScale.x == 0.6f &&
+                scaledShared.ChestScale.y == 2f,
+                "Armor scale or aliased Pos lost in shared settings");
+            var posWins = new VrmSettings("Test",
+                "ShouldersOffset=<0,-0.9,0>\nShouldersPos=<0.2,0.3,0>\nLegsPos=<0,1,0>\nLegsOffset=<9,9,9>\n");
+            check(posWins.ShouldersPos.x == 0.2f && posWins.ShouldersPos.y == 0.3f && posWins.LegsPos.y == 1f,
+                "Armor Pos must win when Offset is also set");
             // Per-class and per-weapon lines: class applies to every member, a named line replaces it,
             // and the lines survive the shared-settings round trip.
             File.WriteAllText(path,
@@ -170,7 +187,8 @@ internal static class SettingsChecks
                          "SpringBoneMaxAngle=-5", "SpringBoneMaxAngle=Ears,200", "SpringBoneMaxAngle=Ears,NaN",
                          "SpringBoneMaxAngle=,18", "InteractionDistanceScale=Infinity",
                          "RightHandBackItemPos=(0,NaN,0)", "SittingOnChairOffset=(0,Infinity,0)",
-                         "HelmetRot=<0,NaN,0>", "ChestPos=<0,NaN,0>", "LegsRot=(Infinity,0,0)"
+                         "HelmetRot=<0,NaN,0>", "ChestPos=<0,NaN,0>", "LegsRot=(Infinity,0,0)",
+                         "ShouldersScale=<0,NaN,0>", "UtilityOffset=<0,Infinity,0>"
                      })
             {
                 File.WriteAllText(path, bad);

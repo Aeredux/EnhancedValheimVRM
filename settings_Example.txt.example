@@ -39,23 +39,34 @@ HelmetVisible=false
 HelmetScale=<1, 1, 1>
 HelmetOffset=<0, 0, 0>
 HelmetRot=<0, 0, 0>
-# Vanilla armor visibility, plus a nudge. Pos is meters along that piece's axes and scales
-# with the avatar, same as HelmetOffset. Rot is euler degrees. Omitted lines stay at zero.
+# Vanilla armor visibility, plus a nudge. Pos is meters and scales with the avatar, same as
+# HelmetOffset. ChestOffset, ShouldersOffset, UtilityOffset, TrinketOffset, and LegsOffset
+# are aliases of those Pos keys; if both are written, Pos wins. Rot is euler degrees.
+# Scale is a per-axis multiplier. <1, 1, 1> (the default) leaves the piece at vanilla size.
+# Capes and most chest and leg pieces are skinned onto the body, so Pos/Rot/Scale are baked
+# into the mesh. Scale and rotation are around the mesh center, not the cloth's visual middle.
+# Utility and trinket pieces are usually rigid attachments and move from their socket, like a
+# helmet. Omitted lines stay at the defaults.
 ChestVisible=false
 ChestPos=<0, 0, 0>
 ChestRot=<0, 0, 0>
+ChestScale=<1, 1, 1>
 ShouldersVisible=false
 ShouldersPos=<0, 0, 0>
 ShouldersRot=<0, 0, 0>
+ShouldersScale=<1, 1, 1>
 UtilityVisible=false
 UtilityPos=<0, 0, 0>
 UtilityRot=<0, 0, 0>
+UtilityScale=<1, 1, 1>
 TrinketVisible=false
 TrinketPos=<0, 0, 0>
 TrinketRot=<0, 0, 0>
+TrinketScale=<1, 1, 1>
 LegsVisible=false
 LegsPos=<0, 0, 0>
 LegsRot=<0, 0, 0>
+LegsScale=<1, 1, 1>
 
 # Material brightness and optional asynchronous texture conversion.
 ModelBrightness=1.0

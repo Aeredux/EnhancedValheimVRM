@@ -46,9 +46,11 @@ settings_Example.txt.example has everything with comments, but the short version
 - HelmetVisible, HelmetScale, HelmetOffset, HelmetRot \
   vanilla helmet on or off, where it sits, and its euler rotation in degrees. HelmetRot aims pieces like the Dverger circlet light.
 - ChestVisible, ShouldersVisible, UtilityVisible, TrinketVisible, LegsVisible \
-  and the matching *Pos and *Rot lines \
+  and the matching *Pos, *Rot, and *Scale lines \
   show the vanilla armor on top of the vrm. off by default because it usually looks wrong. \
-  Pos is meters along that piece's axes and scales with avatar height, same as HelmetOffset. Rot is euler degrees. Omitted lines stay at zero.
+  Pos is meters and scales with avatar height, same as HelmetOffset. ChestOffset, ShouldersOffset, UtilityOffset, TrinketOffset, and LegsOffset are aliases of those Pos keys; if both are written, Pos wins. \
+  Rot is euler degrees. Scale is a per-axis multiplier, and <1, 1, 1> leaves the vanilla size alone. \
+  Capes and most chest and leg pieces are skinned onto the body, so the nudge is baked into the mesh (scale and rotation around the mesh center). Utility and trinket pieces are usually rigid and move from their socket like a helmet.
 - SpringBoneStiffness, SpringBoneGravityPower \
   multipliers on what the vrm author set. 1.0 = leave it alone.
 - SpringBoneImmobile, SpringBoneImmobileType \
