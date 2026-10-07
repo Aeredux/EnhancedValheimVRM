@@ -33,16 +33,41 @@ WeaponScale=1.0
 #KnifeSkollAndHatiLeftHandPos=<0, 0.01, 0>
 #KnifeSkollAndHatiRightHandRot=<0, 0, 15>
 
-# Vanilla helmet visibility and additional scale/position adjustment.
+# Vanilla helmet visibility and additional scale/position/rotation adjustment.
+# HelmetRot is euler degrees, same style as the weapon Rot lines. Use it to aim the Dverger circlet light.
 HelmetVisible=false
 HelmetScale=<1, 1, 1>
 HelmetOffset=<0, 0, 0>
-# Vanilla armor visibility.
+HelmetRot=<0, 0, 0>
+# Vanilla armor visibility, plus a nudge. Pos is meters and scales with the avatar, same as
+# HelmetOffset. ChestOffset, ShouldersOffset, UtilityOffset, TrinketOffset, and LegsOffset
+# are aliases of those Pos keys; if both are written, Pos wins. Rot is euler degrees.
+# Scale is a per-axis multiplier. <1, 1, 1> (the default) leaves the piece at vanilla size.
+# Capes and most chest and leg pieces are skinned onto the body. Pos/Rot/Scale move the
+# vertices and leave the bind poses alone, so the cape stays attached. Scale and rotation
+# are around the mesh center. <1, 1, 1> and a zero Pos/Rot keep the original mesh.
+# Utility and trinket pieces are usually rigid and move from their socket. Omitted lines
+# stay at the defaults.
 ChestVisible=false
+ChestPos=<0, 0, 0>
+ChestRot=<0, 0, 0>
+ChestScale=<1, 1, 1>
 ShouldersVisible=false
+ShouldersPos=<0, 0, 0>
+ShouldersRot=<0, 0, 0>
+ShouldersScale=<1, 1, 1>
 UtilityVisible=false
+UtilityPos=<0, 0, 0>
+UtilityRot=<0, 0, 0>
+UtilityScale=<1, 1, 1>
 TrinketVisible=false
+TrinketPos=<0, 0, 0>
+TrinketRot=<0, 0, 0>
+TrinketScale=<1, 1, 1>
 LegsVisible=false
+LegsPos=<0, 0, 0>
+LegsRot=<0, 0, 0>
+LegsScale=<1, 1, 1>
 
 # Material brightness and optional asynchronous texture conversion.
 ModelBrightness=1.0
@@ -57,7 +82,9 @@ UseMToonShader=false
 # only blendshapes the vrm expressions or your outfit file use get loaded, the rest stay empty so models with hundreds of them load faster and cause less of a frame spike.
 # true loads all of them.
 KeepAllBlendShapes=false
-# Camera height follows the avatar, with optional close-camera fading.
+# Scales the vanilla camera height to the avatar. Stays on the vanilla eye anchor, so
+# mining and other tool swings do not bob the view. Near-wall pull-in uses that same height.
+# Close-camera fading is separate.
 FixCameraHeight=true
 EnablePlayerFade=false
 

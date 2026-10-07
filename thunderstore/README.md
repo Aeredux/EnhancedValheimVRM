@@ -33,7 +33,7 @@ The name of the character in the game needs to correspond to a VRM and settings 
 ### Whats in the settings file
 settings_Example.txt.example has everything with comments, but the short version.
 - ModelScale, ModelBrightness, UseMToonShader, AttemptTextureFix, KeepAllBlendShapes, EnablePlayerFade, FixCameraHeight \
-  the model stuff. AttemptTextureFix converts the textures to the games shader so it gets lit like everything else (and ssao works). \
+  the model stuff. FixCameraHeight scales the vanilla camera height to the avatar and keeps the vanilla eye anchor, so tool swings do not bob the view. Near a wall or roof the collision check uses that same height, and a taller pivot stops under the ceiling. AttemptTextureFix converts the textures to the games shader so it gets lit like everything else (and ssao works). \
   ShaderForTextureFix picks the game shader it converts to, player (default, the normal character shader) or creature (the animal shader). \
   TextureFixEmission (0 to 1) makes the avatar glow a bit with its own colors so it does not go black in shadow. only works with creature. 0.15 default.
 - RightHandItemPos / LeftHandItemPos / RightHandBackItemPos / LeftHandBackItemPos and the matching *Rot ones \
@@ -41,10 +41,14 @@ settings_Example.txt.example has everything with comments, but the short version
 - weapon lines, see the next section.
 - SittingOnChairOffset \
   seated offset: X right, Y up, Z forward. Scales with avatar height.
-- HelmetVisible, HelmetScale, HelmetOffset \
-  vanilla helmet on or off and where it sits.
-- ChestVisible, ShouldersVisible, UtilityVisible, LegsVisible \
-  show the vanilla armor on top of the vrm. off by default because it usually looks wrong.
+- HelmetVisible, HelmetScale, HelmetOffset, HelmetRot \
+  vanilla helmet on or off, where it sits, and its euler rotation in degrees. HelmetRot aims pieces like the Dverger circlet light.
+- ChestVisible, ShouldersVisible, UtilityVisible, TrinketVisible, LegsVisible \
+  and the matching *Pos, *Rot, and *Scale lines \
+  show the vanilla armor on top of the vrm. off by default because it usually looks wrong. \
+  Pos is meters and scales with avatar height, same as HelmetOffset. ChestOffset, ShouldersOffset, UtilityOffset, TrinketOffset, and LegsOffset are aliases of those Pos keys; if both are written, Pos wins. \
+  Rot is euler degrees. Scale is a per-axis multiplier, and <1, 1, 1> leaves the vanilla size alone. \
+  Capes and most chest and leg pieces are skinned onto the body. Pos, Rot, and Scale move the cape's vertices and leave its bind poses alone, so it stays on the body. Scale and rotation are around the mesh center. <1, 1, 1> and a zero offset keep the original mesh. Utility and trinket pieces are usually rigid and move from their socket like a helmet.
 - SpringBoneStiffness, SpringBoneGravityPower \
   multipliers on what the vrm author set. 1.0 = leave it alone.
 - SpringBoneImmobile, SpringBoneImmobileType \

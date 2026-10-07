@@ -62,6 +62,25 @@ namespace EnhancedValheimVRM
                 out localPosition);
         }
 
+        // A cape is drawn from the body bones and the mesh bind poses. Cloth skins with those
+        // poses. Scaling the poses (01470cc) threw that cloth off the body into a giant sheet.
+        // Move the vertices instead. The poses stay the ones the cape was authored with.
+        // Scale <1, 1, 1> and a zero position leave the vertex where it is.
+        public static float3 FitSkinnedVertex(float3 center, float3 position, quaternion rotation, float3 scale,
+            float3 vertex)
+        {
+            return center + math.rotate(rotation, (vertex - center) * scale) + position;
+        }
+
+        public static float3 FitSkinnedDirection(quaternion rotation, float3 scale, float3 direction)
+        {
+            var inverse = new float3(
+                math.abs(scale.x) > 1e-6f ? 1f / scale.x : 0f,
+                math.abs(scale.y) > 1e-6f ? 1f / scale.y : 0f,
+                math.abs(scale.z) > 1e-6f ? 1f / scale.z : 0f);
+            return math.normalizesafe(math.rotate(rotation, direction * inverse));
+        }
+
         public static float3 ToBoneOffset(quaternion boneRotation, float3 worldOffset, float3 adjustment)
         {
             return math.rotate(math.inverse(boneRotation), worldOffset) + adjustment;
