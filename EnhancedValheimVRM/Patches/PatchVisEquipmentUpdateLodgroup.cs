@@ -89,8 +89,8 @@ namespace EnhancedValheimVRM
                 item.SetActive(visible);
                 if (!visible) continue;
                 // Capes, chests and legs are attach_skin: VisEquipment remaps their bones onto the
-                // body, and the instance root is not part of skinning. Bake Pos/Rot/Scale into the
-                // bind poses. Rigid pieces (most utility and trinket) still use the socket.
+                // body. The instance root is not part of skinning. Pos/Rot/Scale rewrite the
+                // vertices and leave the bind poses alone. Rigid pieces still use the socket.
                 var skinned = EquipmentTransformReference.IsSkinned(item.transform);
                 if (skinned)
                 {
@@ -101,9 +101,9 @@ namespace EnhancedValheimVRM
                         var scaledPos = settings.PlayerVrmScale > 0f ? pos * settings.PlayerVrmScale : pos;
                         EquipmentTransformReference.Get(item.transform).ApplySkinnedFit(scaledPos, rot, scale);
                     }
-                }
 
-                if (skinned && !HasRigidRenderer(item)) continue;
+                    continue;
+                }
                 // A zero Pos, Rot and <1, 1, 1> scale leave the vanilla transform alone, so an
                 // omitted line does not move a piece that was only toggled visible.
                 if (idle) continue;
@@ -113,11 +113,6 @@ namespace EnhancedValheimVRM
                     reference.SetPositionOffset(pos, settings.PlayerVrmScale);
                 if (scale != Vector3.one) reference.SetScale(1f, scale);
             }
-        }
-
-        private static bool HasRigidRenderer(GameObject item)
-        {
-            return item.GetComponentInChildren<MeshRenderer>(true) != null;
         }
 
         private static void SetHand(VisEquipment equipment,

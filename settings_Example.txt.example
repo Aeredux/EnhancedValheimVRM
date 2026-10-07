@@ -43,10 +43,11 @@ HelmetRot=<0, 0, 0>
 # HelmetOffset. ChestOffset, ShouldersOffset, UtilityOffset, TrinketOffset, and LegsOffset
 # are aliases of those Pos keys; if both are written, Pos wins. Rot is euler degrees.
 # Scale is a per-axis multiplier. <1, 1, 1> (the default) leaves the piece at vanilla size.
-# Capes and most chest and leg pieces are skinned onto the body, so Pos/Rot/Scale are baked
-# into the mesh. Scale and rotation are around the mesh center, not the cloth's visual middle.
-# Utility and trinket pieces are usually rigid attachments and move from their socket, like a
-# helmet. Omitted lines stay at the defaults.
+# Capes and most chest and leg pieces are skinned onto the body. Pos/Rot/Scale move the
+# vertices and leave the bind poses alone, so the cape stays attached. Scale and rotation
+# are around the mesh center. <1, 1, 1> and a zero Pos/Rot keep the original mesh.
+# Utility and trinket pieces are usually rigid and move from their socket. Omitted lines
+# stay at the defaults.
 ChestVisible=false
 ChestPos=<0, 0, 0>
 ChestRot=<0, 0, 0>

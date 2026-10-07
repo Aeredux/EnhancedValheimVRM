@@ -25,18 +25,34 @@ internal static class Program
     private static void Main()
     {
         SettingsChecks.Run(Check);
-        var skinnedOffset = AttachmentMath.SkinnedPieceFit(float3.zero, new float3(0, -0.9f, -0.05f),
-            quaternion.identity, new float3(1f, 1f, 1f));
-        Near(math.transform(skinnedOffset, float3.zero), new float3(0, -0.9f, -0.05f),
-            "Skinned armor offset is mesh-space meters");
-        var skinnedScale = AttachmentMath.SkinnedPieceFit(new float3(0, 1f, 0), float3.zero, quaternion.identity,
-            new float3(0.6f, 0.6f, 0.6f));
-        Near(math.transform(skinnedScale, new float3(0, 2f, 0)), new float3(0, 1.6f, 0),
-            "Skinned armor scale stays centered on the mesh");
-        var skinnedIdle = AttachmentMath.SkinnedPieceFit(new float3(1f, 2f, 3f), float3.zero, quaternion.identity,
-            new float3(1f, 1f, 1f));
-        Near(math.transform(skinnedIdle, new float3(4f, 5f, 6f)), new float3(4f, 5f, 6f),
-            "Default skinned armor fit is identity");
+        var center = new float3(0f, 1.2f, -0.3f);
+        var tip = new float3(0f, 2.2f, -0.3f);
+        var idleCape = AttachmentMath.FitSkinnedVertex(center, float3.zero, quaternion.identity,
+            new float3(1f, 1f, 1f), tip);
+        Near(idleCape, tip, "Default skinned fit must leave the cape vertex");
+        var fittedCape = AttachmentMath.FitSkinnedVertex(center, new float3(0f, -0.9f, -0.05f), quaternion.identity,
+            new float3(0.6f, 0.6f, 0.6f), tip);
+        Near(fittedCape, new float3(0f, 0.9f, -0.35f),
+            "ShouldersScale 0.6 shrinks about the mesh center and Pos is meters");
+        Near(AttachmentMath.FitSkinnedVertex(center, new float3(0f, -0.9f, -0.05f), quaternion.identity,
+                new float3(0.6f, 0.6f, 0.6f), center),
+            new float3(0f, 0.3f, -0.35f),
+            "Mesh center only moves by Pos");
+        Near(AttachmentMath.FitSkinnedDirection(quaternion.identity, new float3(0.6f, 0.6f, 0.6f),
+                new float3(0f, 1f, 0f)),
+            new float3(0f, 1f, 0f),
+            "Uniform scale keeps the cape normal");
+        Check(math.distance(fittedCape, center) < 1f, "Scaled cape tip must stay next to the mesh center");
+        // The sky cape scaled the bind pose. That pose's translation is the bone anchor, so a
+        // 0.6 scale there moves the anchor instead of shrinking cloth around it.
+        var boneAnchor = new float3(0f, -1.5f, 0f);
+        Check(math.distance(boneAnchor * 0.6f, boneAnchor) > 0.4f,
+            "Scaling a bind pose moves its bone anchor");
+        Check(math.distance(fittedCape, tip) < 2f, "Vertex fit must not throw the cape off the body");
+        Near(AttachmentMath.FitSkinnedVertex(center, new float3(0f, -0.9f, -0.05f), quaternion.identity,
+                new float3(0.6f, 0.6f, 0.6f), tip),
+            fittedCape,
+            "Fitting the source vertex again must not compound");
         SeatSupportChecks.Run(Check);
         var identity = quaternion.identity;
         var turn = quaternion.RotateY(math.PI / 2);

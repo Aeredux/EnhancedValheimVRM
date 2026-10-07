@@ -50,7 +50,7 @@ settings_Example.txt.example has everything with comments, but the short version
   show the vanilla armor on top of the vrm. off by default because it usually looks wrong. \
   Pos is meters and scales with avatar height, same as HelmetOffset. ChestOffset, ShouldersOffset, UtilityOffset, TrinketOffset, and LegsOffset are aliases of those Pos keys; if both are written, Pos wins. \
   Rot is euler degrees. Scale is a per-axis multiplier, and <1, 1, 1> leaves the vanilla size alone. \
-  Capes and most chest and leg pieces are skinned onto the body, so the nudge is baked into the mesh (scale and rotation around the mesh center). Utility and trinket pieces are usually rigid and move from their socket like a helmet.
+  Capes and most chest and leg pieces are skinned onto the body. Pos, Rot, and Scale move the cape's vertices and leave its bind poses alone, so it stays on the body. Scale and rotation are around the mesh center. <1, 1, 1> and a zero offset keep the original mesh. Utility and trinket pieces are usually rigid and move from their socket like a helmet.
 - SpringBoneStiffness, SpringBoneGravityPower \
   multipliers on what the vrm author set. 1.0 = leave it alone.
 - SpringBoneImmobile, SpringBoneImmobileType \
