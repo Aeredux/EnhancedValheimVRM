@@ -50,14 +50,17 @@ namespace EnhancedValheimVRM
         private List<Bone> _bones;
         private Bone _hips;
         private Vector3 _hipOffset;
+        private Ragdoll _ragdoll;
 
         internal bool Setup(Ragdoll ragdoll, Animator avatar, RigOffsets offsets)
         {
+            _ragdoll = ragdoll;
+            var sources = MapRagdollBones(ragdoll, transform);
             var bones = new List<Bone>();
             foreach (HumanBodyBones name in Enum.GetValues(typeof(HumanBodyBones)))
             {
                 if (name == HumanBodyBones.LastBone) continue;
-                var source = BoneLookup.Find(ragdoll.transform, name);
+                if (!sources.TryGetValue(name, out var source)) continue;
                 var target = BoneLookup.Get(avatar, name);
                 if (source == null || target == null || source.IsChildOf(transform)) continue;
                 // Without captured offsets the ragdoll's spawn pose and the avatar's death pose
@@ -82,6 +85,43 @@ namespace EnhancedValheimVRM
             return true;
         }
 
+        // The ragdoll prefab grows a copy of the vanilla skeleton beside its physics bones.
+        // The physics bones are the ones with rigidbodies; the copy is only there to hold
+        // the skinned meshes we hide. A bone named Hip (no s) is the same pelvis.
+        private static Dictionary<HumanBodyBones, Transform> MapRagdollBones(Ragdoll ragdoll, Transform avatarRoot)
+        {
+            var map = new Dictionary<HumanBodyBones, Transform>();
+            Transform hip = null;
+            foreach (var candidate in ragdoll.GetComponentsInChildren<Transform>(true))
+            {
+                if (candidate == null || candidate == avatarRoot || candidate.IsChildOf(avatarRoot)) continue;
+                if (hip == null && candidate.name.Equals("Hip", StringComparison.OrdinalIgnoreCase)) hip = candidate;
+                foreach (HumanBodyBones name in Enum.GetValues(typeof(HumanBodyBones)))
+                {
+                    if (name == HumanBodyBones.LastBone) continue;
+                    if (!BoneNames.Matches(name.ToString(), candidate.name)) continue;
+                    if (!map.TryGetValue(name, out var existing) ||
+                        (candidate.GetComponent<Rigidbody>() != null &&
+                         existing.GetComponent<Rigidbody>() == null))
+                        map[name] = candidate;
+                }
+            }
+
+            if (!map.ContainsKey(HumanBodyBones.Hips) && hip != null) map[HumanBodyBones.Hips] = hip;
+
+            return map;
+        }
+
+        internal void HideVanillaBody()
+        {
+            if (_ragdoll == null) return;
+            foreach (var renderer in _ragdoll.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                if (renderer == null || renderer.transform.IsChildOf(transform)) continue;
+                renderer.forceRenderingOff = true;
+            }
+        }
+
         private static int Depth(Transform transform)
         {
             var depth = 0;
@@ -96,6 +136,8 @@ namespace EnhancedValheimVRM
 
         private void LateUpdate()
         {
+            // VisEquipment turns the copied body renderer back on while it builds the corpse.
+            HideVanillaBody();
             if (_hips?.Source == null || _hips.Target == null) return;
             _hips.Target.position = _hips.Source.position + _hips.Source.rotation * _hipOffset;
             foreach (var bone in _bones)
