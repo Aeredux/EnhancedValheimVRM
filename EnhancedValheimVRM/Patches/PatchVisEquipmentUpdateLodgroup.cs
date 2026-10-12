@@ -42,20 +42,26 @@ namespace EnhancedValheimVRM
                 if (equipment.TryGetField<VisEquipment, GameObject>(field, out var hair)) hair.SetActive(false);
             }
 
-            SetListVisible(equipment, "m_chestItemInstances", settings.ChestVisible);
-            SetListVisible(equipment, "m_legItemInstances", settings.LegsVisible);
-            SetListVisible(equipment, "m_shoulderItemInstances", settings.ShouldersVisible);
-            SetListVisible(equipment, "m_utilityItemInstances", settings.UtilityVisible);
-            SetListVisible(equipment, "m_trinketItemInstances", settings.TrinketVisible);
+            SetListVisible(equipment, "m_chestItemInstances", settings.ChestVisible, settings.ChestPos,
+                settings.ChestRot, settings.ChestScale, settings);
+            SetListVisible(equipment, "m_legItemInstances", settings.LegsVisible, settings.LegsPos, settings.LegsRot,
+                settings.LegsScale, settings);
+            SetListVisible(equipment, "m_shoulderItemInstances", settings.ShouldersVisible, settings.ShouldersPos,
+                settings.ShouldersRot, settings.ShouldersScale, settings);
+            SetListVisible(equipment, "m_utilityItemInstances", settings.UtilityVisible, settings.UtilityPos,
+                settings.UtilityRot, settings.UtilityScale, settings);
+            SetListVisible(equipment, "m_trinketItemInstances", settings.TrinketVisible, settings.TrinketPos,
+                settings.TrinketRot, settings.TrinketScale, settings);
             if (equipment.TryGetField<VisEquipment, GameObject>("m_helmetItemInstance", out var helmet))
             {
                 helmet.SetActive(settings.HelmetVisible);
                 if (settings.HelmetVisible)
                 {
-                    EquipmentTransformReference.Get(helmet.transform)
-                        .SetPositionOffset(settings.HelmetOffset, settings.PlayerVrmScale);
-                    EquipmentTransformReference.Get(helmet.transform)
-                        .SetScale(settings.PlayerVrmScale, settings.HelmetScale);
+                    // same order as held and back items: rotation first, then offset, then scale
+                    var reference = EquipmentTransformReference.Get(helmet.transform);
+                    reference.SetRotationOffset(settings.HelmetRot);
+                    reference.SetPositionOffset(settings.HelmetOffset, settings.PlayerVrmScale);
+                    reference.SetScale(settings.PlayerVrmScale, settings.HelmetScale);
                 }
             }
 
@@ -67,12 +73,45 @@ namespace EnhancedValheimVRM
             vrm.GetGameObject().GetComponent<VrmAnimator>()?.StartupGetItems();
         }
 
-        private static void SetListVisible(VisEquipment equipment, string field, bool visible)
+        private static void SetListVisible(VisEquipment equipment,
+            string field,
+            bool visible,
+            Vector3 pos,
+            Vector3 rot,
+            Vector3 scale,
+            VrmSettings settings)
         {
             if (!equipment.TryGetField<VisEquipment, List<GameObject>>(field, out var items)) return;
+            var idle = pos == Vector3.zero && rot == Vector3.zero && scale == Vector3.one;
             foreach (var item in items)
             {
-                if (item != null) item.SetActive(visible);
+                if (item == null) continue;
+                item.SetActive(visible);
+                if (!visible) continue;
+                // Capes, chests and legs are attach_skin: VisEquipment remaps their bones onto the
+                // body. The instance root is not part of skinning. Pos/Rot/Scale rewrite the
+                // vertices and leave the bind poses alone. Rigid pieces still use the socket.
+                var skinned = EquipmentTransformReference.IsSkinned(item.transform);
+                if (skinned)
+                {
+                    if (idle)
+                        EquipmentTransformReference.ClearSkinnedFit(item.transform);
+                    else
+                    {
+                        var scaledPos = settings.PlayerVrmScale > 0f ? pos * settings.PlayerVrmScale : pos;
+                        EquipmentTransformReference.Get(item.transform).ApplySkinnedFit(scaledPos, rot, scale);
+                    }
+
+                    continue;
+                }
+                // A zero Pos, Rot and <1, 1, 1> scale leave the vanilla transform alone, so an
+                // omitted line does not move a piece that was only toggled visible.
+                if (idle) continue;
+                var reference = EquipmentTransformReference.Get(item.transform);
+                if (rot != Vector3.zero || pos != Vector3.zero) reference.SetRotationOffset(rot);
+                if (pos != Vector3.zero)
+                    reference.SetPositionOffset(pos, settings.PlayerVrmScale);
+                if (scale != Vector3.one) reference.SetScale(1f, scale);
             }
         }
 
