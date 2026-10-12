@@ -580,10 +580,10 @@ namespace EnhancedValheimVRM
             if (ActiveInstances.TryGetValue(player, out var shared))
             {
                 ActiveInstances.Remove(player);
-                // A remote player that died keeps its model for a moment: the corpse may not
-                // have arrived over the network yet.
-                if (player != Player.m_localPlayer && shared.IsDisplayed && !shared.IsCorpse &&
-                    shared.GetGameObject() != null && (shared.DeathSeen || player.IsDead()))
+                // The corpse may not have been spawned yet, on this client or the owner's.
+                // A living logout still drops the model; only a death keeps it for the ragdoll.
+                if (shared.IsDisplayed && !shared.IsCorpse && shared.GetGameObject() != null &&
+                    (shared.DeathSeen || player.IsDead()))
                     KeepForCorpse(shared, player.transform.position, CorpseSignature.Read(player));
                 else
                     shared.Dispose();
@@ -638,7 +638,7 @@ namespace EnhancedValheimVRM
         }
 
         private static readonly List<Orphan> Orphans = new List<Orphan>();
-        private const float CorpseClaimRadius = 4f;
+        private const float CorpseClaimRadius = 16f;
 
         // The game keeps a dead player object alive until the owner respawns, and the killing
         // blow's pushback keeps moving it because motion control stops at death. The name tag
@@ -656,19 +656,23 @@ namespace EnhancedValheimVRM
         {
             var model = vrm?.GetGameObject();
             if (model == null || ragdoll == null || vrm.IsCorpse) return false;
+            if (ragdoll.GetComponentInChildren<VrmRagdoll>(true) != null) return true;
             var avatar = vrm.GetVrmGoAnimator();
             if (avatar == null) return false;
             var animation = model.GetComponent<VrmAnimator>();
-            var transfer = model.AddComponent<VrmRagdoll>();
+            var transfer = model.GetComponent<VrmRagdoll>();
+            if (transfer == null) transfer = model.AddComponent<VrmRagdoll>();
             if (!transfer.Setup(ragdoll, avatar, animation?.Offsets))
             {
                 UnityEngine.Object.Destroy(transfer);
-                Logger.LogWarning("Cannot map corpse hips; keeping Valheim's ragdoll visible.");
                 return false;
             }
 
-            foreach (var renderer in ragdoll.GetComponentsInChildren<SkinnedMeshRenderer>())
-                renderer.forceRenderingOff = true;
+            // Death can cull the live avatar (camera fade / SetVisible) before the corpse
+            // exists. Put the lod point back or the model is attached and never drawn.
+            var lod = model.GetComponent<LODGroup>();
+            if (lod != null) lod.localReferencePoint = vrm.LodReferencePoint;
+            transfer.HideVanillaBody();
             if (animation != null)
             {
                 animation.enabled = false;
@@ -678,28 +682,93 @@ namespace EnhancedValheimVRM
             // Preserve the current world pose and let the game's corpse lifetime own
             // the model and its imported resources, independently of respawn.
             model.transform.SetParent(ragdoll.transform, true);
+            if (!model.activeSelf) model.SetActive(true);
             vrm.ShowModel();
             vrm.IsCorpse = true;
             return true;
         }
 
+        private static readonly HashSet<int> RagdollsWatching = new HashSet<int>();
+        private static readonly Dictionary<int, Player> RagdollOwners = new Dictionary<int, Player>();
+
+        internal static void NoteRagdollOwner(Ragdoll ragdoll, Player player)
+        {
+            if (ragdoll == null || player == null) return;
+            RagdollOwners[ragdoll.GetInstanceID()] = player;
+        }
+
         internal static void OnRagdollAppeared(Ragdoll ragdoll)
         {
-            // Only player corpses carry equipment visuals.
-            if (ragdoll == null || ragdoll.GetComponentInChildren<VisEquipment>(true) == null) return;
+            if (ragdoll == null) return;
+            // Awake, Setup and Start all land here. One watch is enough, and it has to
+            // outlast the frame the vanilla meshes are copied in.
+            if (!RagdollsWatching.Add(ragdoll.GetInstanceID())) return;
             CoroutineHelper.Instance.StartCoroutine(ClaimRagdoll(ragdoll));
         }
 
         private static IEnumerator ClaimRagdoll(Ragdoll ragdoll)
         {
             // The same network update can also destroy the dead player object; let it settle.
-            yield return null;
-            if (ragdoll == null) yield break;
+            // The prefab's skinned body is copied after Awake, so a single frame is not enough.
+            var id = ragdoll.GetInstanceID();
+            var started = Time.realtimeSinceStartup;
+            var sawPlayerGear = false;
+            var hadAvatar = false;
+            while (ragdoll != null && Time.realtimeSinceStartup - started < 3f)
+            {
+                yield return null;
+                if (ragdoll == null) break;
+                if (ragdoll.GetComponentInChildren<VrmRagdoll>(true) != null) break;
+                // The owning client already named the player. Creature ragdolls never do,
+                // and they never gain VisEquipment, so they drop out.
+                var notedOwner = RagdollOwners.ContainsKey(id);
+                if (ragdoll.GetComponentInChildren<VisEquipment>(true) != null)
+                    sawPlayerGear = true;
+                else if (!notedOwner && Time.realtimeSinceStartup - started > 1f)
+                    break;
+
+                if (!sawPlayerGear && !notedOwner) continue;
+                var attached = TryClaim(ragdoll,
+                    Time.realtimeSinceStartup - started > 2f,
+                    out var attempted);
+                hadAvatar |= attempted;
+                if (attached) break;
+            }
+
+            RagdollsWatching.Remove(id);
+            RagdollOwners.Remove(id);
+            if (hadAvatar && ragdoll != null && ragdoll.GetComponentInChildren<VrmRagdoll>(true) == null)
+                Logger.LogWarning("Player ragdoll kept the vanilla body; the avatar could not be mapped onto it.");
+        }
+
+        // True when a displayed avatar was the best corpse for this ragdoll (even if the
+        // bone map is not ready yet). False when nothing dead is close enough to try.
+        private static bool TryClaim(Ragdoll ragdoll, bool allowDistanceOnly, out bool attempted)
+        {
+            attempted = false;
+            if (RagdollOwners.TryGetValue(ragdoll.GetInstanceID(), out var owner) && owner != null)
+            {
+                // This ragdoll was spawned for a specific player. Never give it someone else's avatar.
+                if (IsDisabled(owner)) return false;
+                if (ActiveInstances.TryGetValue(owner, out var owned) && owned != null)
+                {
+                    if (owned.IsCorpse) return true;
+                    if (!owned.IsDisplayed || owned.GetGameObject() == null) return false;
+                    attempted = true;
+                    if (!TransferToRagdoll(owned, ragdoll)) return false;
+                    if (Settings.LogLoadTiming)
+                        Logger.Log(FileTransferController.PlayerLabel(owner) +
+                            ": corpse claimed from the dying player");
+                    return true;
+                }
+            }
+
             var position = ragdoll.transform.position;
             var signature = CorpseSignature.Read(ragdoll);
-            // Candidates are recently dead players near the corpse. The equipment/color
-            // signature the game copied onto the ragdoll decides between them; distance only
-            // breaks ties or stands in when the ragdoll's data has not arrived yet.
+            // Candidates are recently dead players near the corpse, local included.
+            // The equipment/color signature the game copied onto the ragdoll decides
+            // between them; distance only breaks ties or stands in when that data
+            // has not arrived yet.
             var radius = CorpseClaimRadius * CorpseClaimRadius;
             Player bestPlayer = null;
             Orphan bestOrphan = null;
@@ -707,13 +776,12 @@ namespace EnhancedValheimVRM
             foreach (var pair in ActiveInstances)
             {
                 var player = pair.Key;
-                if (player == null || player == Player.m_localPlayer || pair.Value.IsCorpse || !pair.Value.IsDisplayed)
-                    continue;
-                if (!(pair.Value.DeathSeen || player.IsDead())) continue;
+                if (!CanBecomeCorpse(player, pair.Value)) continue;
                 var score = Score((player.transform.position - position).sqrMagnitude,
                     radius,
                     signature,
-                    CorpseSignature.Read(player));
+                    CorpseSignature.Read(player),
+                    allowDistanceOnly);
                 if (score < bestScore)
                 {
                     bestScore = score;
@@ -727,7 +795,8 @@ namespace EnhancedValheimVRM
                 var score = Score((candidate.Position - position).sqrMagnitude,
                     radius,
                     signature,
-                    candidate.Signature);
+                    candidate.Signature,
+                    allowDistanceOnly);
                 if (score < bestScore)
                 {
                     bestScore = score;
@@ -738,38 +807,53 @@ namespace EnhancedValheimVRM
 
             if (bestPlayer != null)
             {
+                attempted = true;
+                if (!ActiveInstances.TryGetValue(bestPlayer, out var instance)) return false;
+                if (!TransferToRagdoll(instance, ragdoll)) return false;
                 if (Settings.LogLoadTiming)
                 {
                     Logger.Log(FileTransferController.PlayerLabel(bestPlayer) +
                         ": corpse claimed while the player object still exists");
                 }
 
-                TransferToRagdoll(ActiveInstances[bestPlayer], ragdoll);
+                return true;
             }
-            else if (bestOrphan != null)
-            {
-                Orphans.Remove(bestOrphan);
-                if (Settings.LogLoadTiming)
-                {
-                    Logger.Log("Corpse at " + position.ToString("F1") + " claimed " +
-                        (Time.realtimeSinceStartup - bestOrphan.DiedAt).ToString("F1") + "s after death, " +
-                        Mathf.Sqrt((bestOrphan.Position - position).sqrMagnitude).ToString("F1") +
-                        "m from where the player fell");
-                }
 
-                if (!TransferToRagdoll(bestOrphan.Instance, ragdoll)) bestOrphan.Instance.Dispose();
+            if (bestOrphan == null) return false;
+            attempted = true;
+            if (!TransferToRagdoll(bestOrphan.Instance, ragdoll)) return false;
+            Orphans.Remove(bestOrphan);
+            if (Settings.LogLoadTiming)
+            {
+                Logger.Log("Corpse at " + position.ToString("F1") + " claimed " +
+                    (Time.realtimeSinceStartup - bestOrphan.DiedAt).ToString("F1") + "s after death, " +
+                    Mathf.Sqrt((bestOrphan.Position - position).sqrMagnitude).ToString("F1") +
+                    "m from where the player fell");
             }
+
+            return true;
+        }
+
+        private static bool CanBecomeCorpse(Player player, VrmInstance instance)
+        {
+            return player != null && !IsDisabled(player) && instance != null && !instance.IsCorpse &&
+                instance.IsDisplayed && instance.GetGameObject() != null &&
+                (instance.DeathSeen || player.IsDead());
         }
 
         // Lower is better; MaxValue rules a candidate out.
         private static float Score(float squaredDistance,
             float squaredRadius,
             CorpseSignature ragdoll,
-            CorpseSignature player)
+            CorpseSignature player,
+            bool allowDistanceOnly)
         {
             if (squaredDistance > squaredRadius) return float.MaxValue;
             if (ragdoll.Known && player.Known) return ragdoll.Matches(player) ? squaredDistance : float.MaxValue;
-            return squaredDistance + squaredRadius; // Unknown signature: distance alone, ranked below any match.
+            // A knocked-back body can sit near someone else's ragdoll. Wait for the copied
+            // equipment signature before falling back to distance.
+            if (!allowDistanceOnly) return float.MaxValue;
+            return squaredDistance + squaredRadius;
         }
 
         internal static bool ParkDeadRemote(Player player, VrmInstance instance)
