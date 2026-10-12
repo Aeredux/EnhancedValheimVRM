@@ -25,6 +25,18 @@ internal static class Program
     private static void Main()
     {
         SettingsChecks.Run(Check);
+        var skinnedOffset = AttachmentMath.SkinnedPieceFit(float3.zero, new float3(0, -0.9f, -0.05f),
+            quaternion.identity, new float3(1f, 1f, 1f));
+        Near(math.transform(skinnedOffset, float3.zero), new float3(0, -0.9f, -0.05f),
+            "Skinned armor offset is mesh-space meters");
+        var skinnedScale = AttachmentMath.SkinnedPieceFit(new float3(0, 1f, 0), float3.zero, quaternion.identity,
+            new float3(0.6f, 0.6f, 0.6f));
+        Near(math.transform(skinnedScale, new float3(0, 2f, 0)), new float3(0, 1.6f, 0),
+            "Skinned armor scale stays centered on the mesh");
+        var skinnedIdle = AttachmentMath.SkinnedPieceFit(new float3(1f, 2f, 3f), float3.zero, quaternion.identity,
+            new float3(1f, 1f, 1f));
+        Near(math.transform(skinnedIdle, new float3(4f, 5f, 6f)), new float3(4f, 5f, 6f),
+            "Default skinned armor fit is identity");
         SeatSupportChecks.Run(Check);
         var identity = quaternion.identity;
         var turn = quaternion.RotateY(math.PI / 2);

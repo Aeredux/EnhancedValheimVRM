@@ -83,6 +83,7 @@ namespace EnhancedValheimVRM
             VrmAnimator.InstallPhysicsPose();
             PatchVisEquipmentUpdateLodgroup.InstallSwingingParts();
             _harmony.PatchAll();
+            PatchRagdollAwake.Apply(_harmony);
             PatchImageBitDepth.Apply(_harmony);
             _instance.gameObject.AddComponent<FileTransferController>();
             _instance.gameObject.AddComponent<VmcReceiver>();

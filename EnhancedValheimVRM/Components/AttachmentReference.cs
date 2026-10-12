@@ -73,5 +73,14 @@ namespace EnhancedValheimVRM
                 new float4(value.m02, value.m12, value.m22, value.m32),
                 new float4(value.m03, value.m13, value.m23, value.m33));
         }
+
+        public static Matrix4x4 Matrix(float4x4 value)
+        {
+            return new Matrix4x4(
+                new Vector4(value.c0.x, value.c0.y, value.c0.z, value.c0.w),
+                new Vector4(value.c1.x, value.c1.y, value.c1.z, value.c1.w),
+                new Vector4(value.c2.x, value.c2.y, value.c2.z, value.c2.w),
+                new Vector4(value.c3.x, value.c3.y, value.c3.z, value.c3.w));
+        }
     }
 }

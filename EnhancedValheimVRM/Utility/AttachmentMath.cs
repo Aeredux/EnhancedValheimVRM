@@ -62,6 +62,16 @@ namespace EnhancedValheimVRM
                 out localPosition);
         }
 
+        // A skinned cape or armor piece is drawn from its bones and bind poses. Its own
+        // transform is not in that formula, so a socket nudge never shows up. This is the
+        // mesh-space change baked into every bind pose: scale and rotate about the mesh
+        // center, then move by position. <1, 1, 1> with a zero position is identity.
+        public static float4x4 SkinnedPieceFit(float3 center, float3 position, quaternion rotation, float3 scale)
+        {
+            return math.mul(float4x4.TRS(center + position, rotation, new float3(1f, 1f, 1f)),
+                math.mul(float4x4.Scale(scale), float4x4.Translate(-center)));
+        }
+
         public static float3 ToBoneOffset(quaternion boneRotation, float3 worldOffset, float3 adjustment)
         {
             return math.rotate(math.inverse(boneRotation), worldOffset) + adjustment;

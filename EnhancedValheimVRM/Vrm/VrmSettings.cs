@@ -29,12 +29,29 @@ namespace EnhancedValheimVRM
         public bool HelmetVisible = false;
         public Vector3 HelmetScale = Vector3.one;
         public Vector3 HelmetOffset = Vector3.zero;
+        // euler degrees, same vector style as the hand and back *Rot lines
+        public Vector3 HelmetRot = Vector3.zero;
 
         public bool ChestVisible = false;
+        public Vector3 ChestPos = Vector3.zero;
+        public Vector3 ChestRot = Vector3.zero;
+        public Vector3 ChestScale = Vector3.one;
         public bool ShouldersVisible = false;
+        public Vector3 ShouldersPos = Vector3.zero;
+        public Vector3 ShouldersRot = Vector3.zero;
+        public Vector3 ShouldersScale = Vector3.one;
         public bool UtilityVisible = false;
+        public Vector3 UtilityPos = Vector3.zero;
+        public Vector3 UtilityRot = Vector3.zero;
+        public Vector3 UtilityScale = Vector3.one;
         public bool TrinketVisible = false;
+        public Vector3 TrinketPos = Vector3.zero;
+        public Vector3 TrinketRot = Vector3.zero;
+        public Vector3 TrinketScale = Vector3.one;
         public bool LegsVisible = false;
+        public Vector3 LegsPos = Vector3.zero;
+        public Vector3 LegsRot = Vector3.zero;
+        public Vector3 LegsScale = Vector3.one;
 
         public float ModelBrightness = 0.8f;
         public bool FixCameraHeight = true;
@@ -154,6 +171,15 @@ namespace EnhancedValheimVRM
 
         private readonly Dictionary<string, ItemAdjustment> _rigParts =
             new Dictionary<string, ItemAdjustment>(StringComparer.OrdinalIgnoreCase);
+
+        // ChestOffset and the other *Offset lines are aliases of *Pos. The real field stays Pos
+        // so a shared file still has one key. If both are written, Pos wins.
+        private static readonly string[] ArmorSlots = { "Chest", "Shoulders", "Utility", "Trinket", "Legs" };
+
+        private readonly Dictionary<string, Vector3> _armorOffsetAliases =
+            new Dictionary<string, Vector3>(StringComparer.Ordinal);
+
+        private readonly HashSet<string> _explicitArmorPos = new HashSet<string>(StringComparer.Ordinal);
 
         public bool TryGetRigOffset(string prefabName, string part, out Vector3 pos, out Vector3 rot)
         {
@@ -487,6 +513,7 @@ namespace EnhancedValheimVRM
 
                 if (TryParseWeaponScaleLine(key, value)) continue;
                 if (TryParseSpringGroupLine(key, value)) continue;
+                if (TryParseArmorOffsetAlias(key, value)) continue;
                 if (!_fields.ContainsKey(key) && TryParseItemLine(key, value)) continue;
                 if (!_fields.ContainsKey(key) && TryParseRigLine(key, value)) continue;
 
@@ -495,13 +522,54 @@ namespace EnhancedValheimVRM
                     var valueOut = ParseValue(field.FieldType, value);
 
                     if (valueOut != null)
+                    {
+                        if (TryCanonicalArmorPos(key, out var posKey)) _explicitArmorPos.Add(posKey);
                         field.SetValue(this, valueOut);
+                    }
                     else
                         throw new InvalidDataException($"Cannot parse setting {key}: {value}");
                 }
             }
 
+            ApplyArmorOffsetAliases();
             Validate();
+        }
+
+        // ShouldersOffset=<x, y, z> fills ShouldersPos when that Pos line was not written.
+        private bool TryParseArmorOffsetAlias(string key, string value)
+        {
+            if (!key.EndsWith("Offset", StringComparison.OrdinalIgnoreCase)) return false;
+            var slot = key.Substring(0, key.Length - "Offset".Length);
+            var canonical = Array.Find(ArmorSlots, name => name.Equals(slot, StringComparison.OrdinalIgnoreCase));
+            if (canonical == null) return false;
+            var vector = ParseVector3(value);
+            if (vector == null) throw new InvalidDataException("Cannot parse setting " + key + ": " + value);
+            _armorOffsetAliases[canonical + "Pos"] = vector.Value;
+            return true;
+        }
+
+        private static bool TryCanonicalArmorPos(string key, out string canonical)
+        {
+            canonical = null;
+            if (!key.EndsWith("Pos", StringComparison.OrdinalIgnoreCase)) return false;
+            var slot = key.Substring(0, key.Length - 3);
+            var found = Array.Find(ArmorSlots, name => name.Equals(slot, StringComparison.OrdinalIgnoreCase));
+            if (found == null) return false;
+            canonical = found + "Pos";
+            return true;
+        }
+
+        private void ApplyArmorOffsetAliases()
+        {
+            foreach (var pair in _armorOffsetAliases)
+            {
+                var offset = pair.Value;
+                if (float.IsNaN(offset.x) || float.IsInfinity(offset.x) || float.IsNaN(offset.y) ||
+                    float.IsInfinity(offset.y) || float.IsNaN(offset.z) || float.IsInfinity(offset.z))
+                    throw new InvalidDataException("Non-finite offset: " + pair.Key);
+                if (_explicitArmorPos.Contains(pair.Key)) continue;
+                _fields[pair.Key].SetValue(this, offset);
+            }
         }
 
         private void Validate()
